@@ -1,0 +1,16 @@
+{% extends 'base2.html' %}
+{% block content %}
+<h2>{{ item.name }}</h2>
+<p>{{ item.long_description }}</p>
+<p>Price: ${{ item.currentPrice }}</p>
+
+{% if item.sold == "unsold" %}
+    <form action="{% url 'buy_item' item.id %}" method="post">
+        {% csrf_token %}
+        <button type="submit">Buy Now</button>
+    </form>
+{% else %}
+    <p>This item has been sold.</p>
+{% endif %}
+
+{% endblock %}

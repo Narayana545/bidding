@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bid Items</title>
+</head>
+<body>
+    <h1>Available Bid Items</h1>
+    <ul>
+        {% for item in bid_items %}
+            <li>
+                <h2>{{ item.name }}</h2>
+                <p>{{ item.description }}</p>
+                <p>Starting Price: ${{ item.starting_price }}</p>
+                <p>Ends on: {{ item.end_date }}</p>
+            </li>
+        {% empty %}
+            <p>No items available for bidding at the moment.</p>
+        {% endfor %}
+    </ul>
+</body>
+</html>

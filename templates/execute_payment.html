@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Execution</title>
+</head>
+<body>
+    <h1>Payment Execution</h1>
+    {% if payment_status == 'success' %}
+        <p>Thank you! Your payment was successful.</p>
+        <p>Transaction ID: {{ transaction_id }}</p>
+    {% else %}
+        <p>Sorry, there was an issue executing the payment. Please try again or contact support.</p>
+    {% endif %}
+</body>
+</html>
