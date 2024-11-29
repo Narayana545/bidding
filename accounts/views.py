@@ -10,7 +10,7 @@ from django.core.mail import send_mail
 from datetime import date
 from django.conf import settings
 from django.http import JsonResponse
-import paypalrestsdk
+
 import datetime
 # Create your views here.
 def login(request):
@@ -32,12 +32,28 @@ def login(request):
 
 def register(request):
     if request.method == 'POST':
-        fname=request.POST['fname']
-        lname=request.POST['lname']
+        fname = request.POST['fname']
+        lname = request.POST['lname']
         name = request.POST['name']
         mail = request.POST['email']
         p1 = request.POST['p1']
         p2 = request.POST['p2']
+
+        if p1 != p2:
+            return HttpResponse("Passwords do not match", status=400)
+
+        if len(p1) < 8:
+            return HttpResponse("Password must be at least 8 characters long", status=400)
+
+        try:
+            user = User.objects.create_user(username=name, email=mail, password=p1)
+            user.first_name = fname
+            user.last_name = lname
+            user.save()
+            messages.info(request,"Registration successful")
+            return redirect("home")
+        except Exception as e:
+            return HttpResponse(f"Error: {str(e)}", status=500)
 
         contact = request.POST['contact']
         if p1 == p2:
@@ -67,27 +83,34 @@ def register(request):
     else:
         return render(request,'register.html')
 
-# @login_required(login_url='login')
-# def edit_profile(request):
-#     user = request.user  # Get the currently logged-in user
+@login_required
+def edit_profile(request):
+    # Get the current logged-in user (no need for query as request.user is already the User instance)
+    user = request.user
     
-#     if request.method == 'POST':
-#         user.first_name =request.POST.get('fname')
-#         user.last_name =request.POST.get('lname')
-#         user.name = request.POST.get('name')                                                  
-#         user.email = request.POST.get('email')
-#         # Add any other fields here
-#         user.save()  # Save the updated user object
-#         return redirect('login')  # Redirect to the profile page (adjust URL name as necessary)
+    if user:
+        if request.method == 'POST':
+            # Get new values from the POST request
+            fname = request.POST.get('first_name')
+            lname = request.POST.get('last_name')
+            email = request.POST.get('email')
+            
+            # Update user fields
+            user.first_name = fname
+            user.last_name = lname
+            user.email = email
+            
+            # Save the updated user object
+            user.save()
+            
+            # Redirect to home page or any other page after saving
+            return redirect('home')
+        
+        # Render the profile edit page with the current user details
+        return render(request, 'edit_profile.html', {'user': user})
     
-#     return render(request,'edit_profile.html',{'user': user})
-
-paypalrestsdk.configure({
-    'mode': settings.PAYPAL_MODE,  # 'sandbox' or 'live'
-    'client_id': settings.PAYPAL_CLIENT_ID,
-    'client_secret': settings.PAYPAL_CLIENT_SECRET,
-})
-
+    # If no user is found (although this is rare, as request.user should always exist if logged in)
+    return HttpResponse("No user")
 
 @login_required(login_url='login')
 def sendMailTowinners(request):
@@ -112,42 +135,6 @@ def sendMailTowinners(request):
             obj2 = Detail.objects.get(username=itemuser)
             itemcon = obj2.contact
 
-            payment_amount = str(i.highest_bid)  # Assuming 'highest_bid' is the winning bid amount on the item
-            payment = paypalrestsdk.Payment({
-                "intent": "sale",
-                "payer": {
-                    "payment_method": "paypal"
-                },
-                "transactions": [{
-                    "amount": {
-                        "total": payment_amount,
-                        "currency": "USD"
-                    },
-                    "description": f"Payment for {i.name}'s auction"
-                }],
-                "redirect_urls": {
-                    "return_url": "http://localhost:8000/execute/",  # Adjust to your actual URL
-                    "cancel_url": "http://localhost:8000/cancel/"   # Adjust to your actual URL
-                }
-            })
-
-            if payment.create():
-                for link in payment.links:
-                    if link.rel == "approval_url":
-                        approval_url = link.href
-
-                        # To winner
-                        msg = f"Congratulations! You are the winner of the item {i.name}. Please make the payment to complete the transaction. Payment Link: {approval_url}\n\nSeller's Email: {i.ownermail}\nSeller's Contact: {itemcon}\n\nThank you for participating in the auction!"
-                        send_email(f"Congratulations! You won {i.name}'s auction!", msg, winnermail)
-
-                        # To owner
-                        msg_owner = f"Congratulations! Your item {i.name} has been sold to {winnermail}. Please contact the winner for further details.\n\nWinner's Email: {winnermail}\nWinner's Contact: {wincon}\n\nPayment Link: {approval_url}\n\nThank you!"
-                        send_email(f"Your item {i.name} has been sold!", msg_owner, i.ownermail)
-
-            else:
-                print("Failed to create PayPal payment link")
-                continue  # Skip to the next item
-
             # Update the item's email status
             i.sendwinmail = "sended"
             i.save()
@@ -155,31 +142,12 @@ def sendMailTowinners(request):
         except:
             pass
 
-# def create_payment(request):
-#     # Logic to create payment (e.g., with PayPal or Stripe)
-#     return JsonResponse({'status': 'Payment created successfully'})        
-
-# def execute_payment(request):
-#     payment_id = request.GET.get('paymentId')
-#     payer_id = request.GET.get('PayerID')
-#     payment = paypalrestsdk.Payment.find(payment_id)
-    
-#     if payment.execute({"payer_id": payer_id}):
-#         # Payment executed successfully
-#         return render(request, 'execute_payment.html', {'payment_status': 'success', 'transaction_id': payment.transactions[0].related_resources[0].winnerid})
-#     else:
-#         # Payment failed
-#         return render(request, 'execute_payment.html', {'payment_status': 'failed'})
-
-# def cancel_payment(request):
-#     return render(request, 'cancel_payment.html')
-
 
 @login_required(login_url='login')
 def pastConfigurations(request):
-    # cuser =request.user
-    # cmail = cuser.email
-    # item = Item.objects.filter(ownermail=cmail)
+    cuser =request.user
+    cmail = cuser.email
+    item = Item.objects.filter(ownermail=cmail)
     item = Item.objects.all()
     for i in item:
         try:
@@ -287,3 +255,4 @@ def buy_item(request, item_id):
 
     messages.success(request, f"You bought {item.name} for ${item.currentPrice}")
     return redirect('purchase_success')
+
