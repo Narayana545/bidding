@@ -9,7 +9,7 @@ from django.views.generic import TemplateView
 urlpatterns = [
     path('',views.login,name="login"),
     path('register',views.register,name="register"),
-    # path('edit', views.edit_profile, name='edit_profile'),
+    path('edit', views.edit_profile, name='edit_profile'),
     path('home',views.home,name="home"),
     path('logout',views.logout,name="logout"),
     path('items/logout',views.ilogout,name="ilogout"),
@@ -17,9 +17,7 @@ urlpatterns = [
     path('future',views.future,name="future"),
     path('log',views.log,name="log"),
     path('item/<int:item_id>/buy/', views.buy_item, name='buy_item'),
-    # path('payment/create/',views.create_payment, name='create_payment'),
-    # path('payment/execute/',views.execute_payment, name='execute_payment'),
-    # path('payment/cancel/',views.cancel_payment, name='cancel_payment'),
+    
     
     # forgot   
     path('password-reset/',
