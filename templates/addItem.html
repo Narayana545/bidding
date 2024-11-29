@@ -132,15 +132,22 @@
                         Auction date :
                     </td>
                     <td>
-                        <input type="date" name="s_date" class="field" required>
+                        <input type="date" name="s_date" class="field" required id="startDate">
                     </td>
+                    
+                    <script>
+                        
+                        const today = new Date().toISOString().split('T')[0];
+                       
+                        document.getElementById('startDate').setAttribute('min', today);
+                    </script>
                 </tr>
                 <tr>
                     <td height="20px"></td>
                     <td height="20px"></td>
                 </tr>
                 <tr>
-					<td colspan="2" align="center" ><font color="white"><input type="submit" class="btt third" value="Upload"></td>
+		     <td colspan="2" align="center" ><font color="white"><input type="submit" class="btt third" value="Upload"></td>
                 </tr>
                 <tr>
                     <td height="60px"></td>
